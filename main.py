@@ -15,7 +15,7 @@ os.makedirs("static", exist_ok=True)
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Geliştirme için tüm kaynaklara izin
+    allow_origins=["https://henry759.github.io/Image_Scaler_Frontend/"],  # Geliştirme için tüm kaynaklara izin
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
