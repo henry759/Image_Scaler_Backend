@@ -15,7 +15,7 @@ os.makedirs("static", exist_ok=True)
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["https://henry759.github.io/"],  # Geliştirme için tüm kaynaklara izin
+    allow_origins=["*"],  # Geliştirme için tüm kaynaklara izin
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -41,8 +41,7 @@ async def process_file(file: UploadFile = File(...)):
             "ffmpeg",
             "-i", input_path,
             "-vf", f"scale=-1:5000:flags=lanczos",
-            "-frames:v", "1",
-            "-update", "1",
+            "-y",
             output_path,
         ]
 
