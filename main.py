@@ -31,6 +31,8 @@ def check_ffmpeg():
     except FileNotFoundError:
         return False
 
+
+
 @app.post("/process")
 async def process_file(file: UploadFile = File(...)):
     with tempfile.TemporaryDirectory() as tmpdir:
@@ -38,6 +40,13 @@ async def process_file(file: UploadFile = File(...)):
         input_path = os.path.join(tmpdir, "input.jpg") 
         output_path = os.path.join(tmpdir, "output.jpg")
 
+        def enhance_image(contrast=1.2, brightness=0.05, saturation=1.3, sharpness=1.0):
+            return (
+                f"eq=contrast={contrast}:brightness={brightness}:saturation={saturation},"
+                f"unsharp=5:5:{sharpness}"
+            )
+
+        filter_chain = f"scale=8000:-1:flags=lanczos,{enhance_image()}"
         content = await file.read()
         with open(input_path, "wb") as f:
             f.write(content)
@@ -45,7 +54,7 @@ async def process_file(file: UploadFile = File(...)):
         command = [
             "ffmpeg",
             "-i", input_path,
-            "-vf", f"scale=-1:5000:flags=lanczos",
+            "-vf", filter_chain,
             "-q:v", "2",
             "-y",
             output_path,
