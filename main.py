@@ -1,5 +1,5 @@
 from fastapi import FastAPI, File, UploadFile
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, StreamingResponse
 import shutil
 import uuid
 import tempfile
@@ -8,10 +8,9 @@ from typing import List
 from fastapi.middleware.cors import CORSMiddleware
 import os
 import subprocess
+import io
 
 app = FastAPI()
-
-os.makedirs("static", exist_ok=True)
 
 app.add_middleware(
     CORSMiddleware,
@@ -30,22 +29,43 @@ def root():
 @app.post("/process")
 async def process_file(file: UploadFile = File(...)):
     with tempfile.TemporaryDirectory() as tmpdir:
-        unique_name = f"{uuid.uuid4().hex}.jpg"
-        input_path = os.path.join(tmpdir, unique_name) 
-        output_path = os.path.join(tmpdir, f"processed_{unique_name}")
+        # unique_name = f"{uuid.uuid4().hex}.jpg"
+        input_path = os.path.join(tmpdir, "input.jpg") 
+        output_path = os.path.join(tmpdir, "output.jpg")
 
+        content = await file.read()
         with open(input_path, "wb") as f:
-            f.write(await file.read())
+            f.write(content)
 
         command = [
             "ffmpeg",
             "-i", input_path,
             "-vf", f"scale=-1:5000:flags=lanczos",
+            "-q:v", "2",
             "-y",
             output_path,
         ]
 
-        subprocess.run(command, check=True)
+        try:
+            result = subprocess.run(command, check=True, capture_output=True, text=True)
+            with open(output_path, "rb") as f:
+                processed_image = f.read()
+            return StreamingResponse(
+                io.BytesIO(processed_image),
+                media_type="image/jpeg",
+                headers={
+                    "Content-Disposition": "inline; filename=processed.jpg"
+                }
+            )
+        except subprocess.CalledProcessError as e:
+            return {
+                "error": "FFmpeg processing failed",
+                "details": e.stderr
+            }
+        except FileNotFoundError:
+            return {
+                "error": "FFmpeg not found please install it",
+            }
 
         final_path = os.path.join("static", f"processed_{unique_name}")
         shutil.move(output_path, final_path)
