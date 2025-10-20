@@ -46,7 +46,7 @@ async def process_file(file: UploadFile = File(...)):
                 f"unsharp=5:5:{sharpness}"
             )
 
-        filter_chain = f"scale=8000:-1:flags=lanczos,{enhance_image()}"
+        filter_chain = f"scale=6000:-1:flags=lanczos,{enhance_image()}"
         content = await file.read()
         with open(input_path, "wb") as f:
             f.write(content)
