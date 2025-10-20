@@ -20,11 +20,16 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-scaled_images = []
-
 @app.get("/")
 def root():
     return {"message": "Successfully Created!!"}
+
+def check_ffmpeg():
+    try:
+        result = subprocess.run(["ffmpeg", "-version"], capture_output=True, text=True)
+        return True
+    except FileNotFoundError:
+        return False
 
 @app.post("/process")
 async def process_file(file: UploadFile = File(...)):
@@ -66,12 +71,3 @@ async def process_file(file: UploadFile = File(...)):
             return {
                 "error": "FFmpeg not found please install it",
             }
-
-        final_path = os.path.join("static", f"processed_{unique_name}")
-        shutil.move(output_path, final_path)
-
-        return FileResponse(
-            final_path,
-            media_type="image/jpeg",
-            filename="processed.jpg"
-        )
